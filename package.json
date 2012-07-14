@@ -1,0 +1,26 @@
+{
+	"name": "propex-validation",
+	"version": "0.0.1",
+	"description": "Uses Propex to validate javascript objects",
+	"keywords": ["propex", "property expressions", "json validation"],
+	"homepage": "http://github.com/williamwicks/propex-validation",
+	"repository": {
+		"type": "git",
+		"url": "git@github.com:williamwicks/propex-validation.git"
+	},
+	"author"  : {
+		"name"  : "William Wicks",
+		"email" : "wjwicks@gmail.com"
+	},
+	"dependencies": {
+		"propex":"0.1.3"
+	},
+	"devDependencies": {
+		"vows":"*"
+	},
+	"main": "index",
+	"engines": {
+		"node": "*"
+	},
+	"licenses": [{"type": "MIT", "url": "http://www.opensource.org/licenses/MIT"}]
+}
