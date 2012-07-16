@@ -14,13 +14,26 @@ function length(min, max) { return function(value){
 
 vows.describe("Validation tests")
 	.addBatch({
-		"Constructing a Validator without any params": {
-			topic: function(){
-				return new Validator()
+		"Constructing a Validator": {
+			"without any params": {
+				topic: function(){
+					return new Validator()
+				},
+				"is pointless- but doable": function(v){
+					assert.isNotNull(v);
+					assert.equal(typeof v, 'function');
+				}
 			},
-			"is pointless- but doable": function(v){
-				assert.isNotNull(v);
-				assert.isFunction(v);
+			"with a sub Validator": {
+				topic: function(){
+					return new Validator({
+						people: new Validator()
+					})
+				},
+				"converted the Validator object to {parse: ... }": function(v){
+					assert.includes(v.validators, 'people');
+					assert.includes(v.validators.people,'parse');
+				}
 			}
 		}
 	})
@@ -93,22 +106,18 @@ vows.describe("Validation tests")
 			'Propex:{name,type}': {
 				'Data:{name:"lace",type:"cat"}': {
 					topic: function(validate){
-						debugger;
 						return validate('{name,type}', {name:"lace",type:"cat",xtra:"ignored"});
 					},
 					"should have an error because the name does not match 'roojoo'": function(result){
-						debugger;
 						assert.isObject(result.errors);
 						assert.includes(result.errors, 'name');
 					}
 				},
 				'Data:{name:"roojoo",type:"cat",xtra:"ignored"}': {
 					topic: function(validate){
-						debugger;
 						return validate('{name,type}', {name:"roojoo",type:"cat",xtra:"ignored"});
 					},
 					"should successfully find all required items and ignore xtra": function(result){
-						debugger;
 						assert.isUndefined(result.errors);
 						assert.isObject(result.valid);
 						assert.equal(result.valid.name, 'roojoo');
@@ -146,11 +155,9 @@ vows.describe("Validation tests")
 			},
 			"valid name":{
 				topic: function(validate){
-					debugger;
 					return validate("{name}", {name:"Nicole"});
 				},
 				"calls 'set' and appends to the end": function(result){
-					debugger;
 					assert.isUndefined(result.errors);
 					assert.include(result.valid, 'name');
 					assert.equal(result.valid.name, "Nicole is a suitable name.");

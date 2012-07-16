@@ -2,17 +2,7 @@
 var Px = require("propex");
 
 function Validator(validators){
-	validators = (function(temp){
-		Object.keys(validators || {}).forEach(function(k) {
-			var v = validators[k];
-			if(v.prototype == Validator){
-				temp[k] = { parse: v };
-			}
-			else temp[k] = clone(v);
-		});
-		return temp;
-	})({});
-
+	
 	function fn(propex, value, augmentors){
 		if(typeof propex == "string")
 			propex = Px(propex);
@@ -31,7 +21,19 @@ function Validator(validators){
 
 		return result;
 	}
-	fn.prototype = Validator;
+	fn.constructor = Validator;
+	fn.__proto__ = Validator.prototype;
+	fn.validators = (function(temp){
+		Object.keys(validators || {}).forEach(function(k) {
+			var v = validators[k];
+			if(v.constructor == Validator){
+				temp[k] = { parse: v };
+			}
+			else temp[k] = clone(v);
+		});
+		return temp;
+	})({});
+
 	return fn;
 
 	//----------------------------------------------------
