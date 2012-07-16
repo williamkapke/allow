@@ -1,5 +1,3 @@
 
 
-module.exports = {
-	validator: require("./validator")
-}
+module.exports = require("./validator");
