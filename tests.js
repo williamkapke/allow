@@ -33,6 +33,18 @@ vows.describe("Validation tests")
 				"converted the Validator object to {parse: ... }": function(v){
 					assert.includes(v.validators, 'people');
 					assert.includes(v.validators.people,'parse');
+				},
+				"should populate sub errors": {
+					topic: function(validate){
+						return validate("{people{name,phone,role}}", {people:{}});
+					},
+					"empty object should return errors for all required children": function(result){
+						assert.isDefined(result.errors);
+						assert.include(result.errors, 'people');
+						assert.isDefined(result.errors.people.name);
+						assert.isDefined(result.errors.people.phone);
+						assert.isDefined(result.errors.people.role);
+					}
 				}
 			}
 		}
@@ -104,6 +116,26 @@ vows.describe("Validation tests")
 				"bookend": {}
 			},
 			'Propex:{name,type}': {
+				'Data: undefined': {
+					topic: function(validate){
+						return validate('{name,type}', undefined);
+					},
+					"should return return string: 'This information is required'": function(result){
+						assert.isDefined(result.errors);
+						assert.isString(result.errors);
+						assert.equal(result.errors, 'This information is required');
+					}
+				},
+				'Data: {}': {
+					topic: function(validate){
+						return validate("{name,type}", {});
+					},
+					"should return errors for all required children": function(result){
+						assert.isDefined(result.errors);
+						assert.isDefined(result.errors.name);
+						assert.isDefined(result.errors.type);
+					}
+				},
 				'Data:{name:"lace",type:"cat"}': {
 					topic: function(validate){
 						return validate('{name,type}', {name:"lace",type:"cat",xtra:"ignored"});

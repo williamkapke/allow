@@ -1,7 +1,7 @@
 
 var Px = require("propex");
 
-function Validator(validators){
+function Validator(config){
 	
 	function fn(propex, value, augmentors){
 		if(typeof propex == "string")
@@ -23,9 +23,9 @@ function Validator(validators){
 	}
 	fn.constructor = Validator;
 	fn.__proto__ = Validator.prototype;
-	fn.validators = (function(temp){
-		Object.keys(validators || {}).forEach(function(k) {
-			var v = validators[k];
+	fn.validators = config = (function(temp){
+		Object.keys(config || {}).forEach(function(k) {
+			var v = config[k];
 			if(v.constructor == Validator){
 				temp[k] = { parse: v };
 			}
@@ -58,12 +58,12 @@ function Validator(validators){
 	function examineObject(obj, propex, valid, errors){
 		var pxi = propex.items;
 		Object.keys(pxi).forEach(function(key) {
-			examineItem(key, obj[key],  pxi[key], errors, valid, validators[key]);
+			examineItem(key, obj[key],  pxi[key], errors, valid, config[key]);
 		});
 	}
 	function examineArray(array, propex, valid, errors){
 		var defaultProperty = propex.items["-1"],
-			defaultValidator = validators["-1"],
+			defaultValidator = config["-1"],
 			pxItems = propex.items,
 			validator,
 			property,
@@ -77,23 +77,23 @@ function Validator(validators){
 			if (property == null)
 				throw new Error("No Property specifed for item[" + i + "] and no default is specified.");
 
-			validator = validators[key] || defaultValidator;
+			validator = config[key] || defaultValidator;
 			examineItem(i, array[i],  property, errors, valid, validator);
 		}
 	}
-	function examineItem(key, item,  property, errors, valid, validator){
+	function examineItem(key, item,  property, errors, valid, actions){
 		if(item == undefined || (property.items && typeMismatch(property.items.isArray, item))) {
 			if(!property.isOptional)
-				errors[key] = ((validator && validator.missing) || Validator.errors.required)(key, item);
+				errors[key] = ((actions && actions.missing) || Validator.errors.required)(key, item);
 			return;
 		}
 
-		if(!validator) {
+		if(!actions) {
 			valid[key] = item;
 			return;
 		}
-		if(validator.parse) {
-			item = validator.parse(property.subproperties, item);
+		if(actions.parse) {
+			item = actions.parse(property.subproperties, item);
 			if(item.errors)
 				errors[key] = item.errors;
 
@@ -101,11 +101,11 @@ function Validator(validators){
 		}
 
 		var errorMessage;
-		if(validator.test && (errorMessage = validator.test(item))){
+		if(actions.test && (errorMessage = actions.test(item))){
 			errors[key] = errorMessage;
 		}
 		else{
-			if(validator.set) validator.set.call(property, valid, item);
+			if(actions.set) actions.set.call(property, valid, item);
 			else valid[key] = item;
 		}
 	}
