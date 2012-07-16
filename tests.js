@@ -12,7 +12,6 @@ function length(min, max) { return function(value){
 
 
 
-
 vows.describe("Validation tests")
 	.addBatch({
 		"Constructing a Validator without any params": {
@@ -46,7 +45,7 @@ vows.describe("Validation tests")
 						return validate("[]", []);
 					},
 					"should not return errors and valid should be empty": function(result){
-						assert.isUndefined(result.error);
+						assert.isUndefined(result.errors);
 						assert.isArray(result.valid);
 						assert.isEmpty(result.valid);
 					}
@@ -67,7 +66,7 @@ vows.describe("Validation tests")
 						return validate("{}", {});
 					},
 					"should not return errors and valid should be empty": function(result){
-						assert.isUndefined(result.error);
+						assert.isUndefined(result.errors);
 						assert.isObject(result.valid);
 						assert.isEmpty(result.valid);
 					}
@@ -94,18 +93,22 @@ vows.describe("Validation tests")
 			'Propex:{name,type}': {
 				'Data:{name:"lace",type:"cat"}': {
 					topic: function(validate){
+						debugger;
 						return validate('{name,type}', {name:"lace",type:"cat",xtra:"ignored"});
 					},
 					"should have an error because the name does not match 'roojoo'": function(result){
+						debugger;
 						assert.isObject(result.errors);
 						assert.includes(result.errors, 'name');
 					}
 				},
 				'Data:{name:"roojoo",type:"cat",xtra:"ignored"}': {
 					topic: function(validate){
+						debugger;
 						return validate('{name,type}', {name:"roojoo",type:"cat",xtra:"ignored"});
 					},
 					"should successfully find all required items and ignore xtra": function(result){
+						debugger;
 						assert.isUndefined(result.errors);
 						assert.isObject(result.valid);
 						assert.equal(result.valid.name, 'roojoo');
@@ -114,6 +117,44 @@ vows.describe("Validation tests")
 					}
 				},
 				"bookend": {}
+			}
+		}
+	})
+	.addBatch({
+		"Testing against sample Validator": {
+			topic: function(){
+				return new Validator({
+					"name": {
+						test: function(value){
+							if(value.length < 4) return "Dude, "+value+", your name is too short!";
+						},
+						set: function(model, value) {
+							model[this.name] = value+" is a suitable name.";
+						}
+					}
+				});
+			},
+			"short name":{
+				topic: function(validate){
+					return validate("{name}", {name:"Ed"});
+				},
+				"should fail 'test' function": function(result){
+					assert.isEmpty(result.valid);
+					assert.include(result.errors, 'name');
+					assert.equal(result.errors.name, "Dude, Ed, your name is too short!");
+				}
+			},
+			"valid name":{
+				topic: function(validate){
+					debugger;
+					return validate("{name}", {name:"Nicole"});
+				},
+				"calls 'set' and appends to the end": function(result){
+					debugger;
+					assert.isUndefined(result.errors);
+					assert.include(result.valid, 'name');
+					assert.equal(result.valid.name, "Nicole is a suitable name.");
+				}
 			}
 		}
 	})

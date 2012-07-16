@@ -86,7 +86,11 @@ function Validator(validators){
 			return;
 		}
 
-		if(validator && validator.parse) {
+		if(!validator) {
+			valid[key] = item;
+			return;
+		}
+		if(validator.parse) {
 			item = validator.parse(property.subproperties, item);
 			if(item.errors)
 				errors[key] = item.errors;
@@ -95,10 +99,13 @@ function Validator(validators){
 		}
 
 		var errorMessage;
-		if(validator && validator.test && (errorMessage = validator.test(item)))
+		if(validator.test && (errorMessage = validator.test(item))){
 			errors[key] = errorMessage;
-		else
-			valid[key] = item;
+		}
+		else{
+			if(validator.set) validator.set.call(property, valid, item);
+			else valid[key] = item;
+		}
 	}
 }
 Validator.errors = {
