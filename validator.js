@@ -6,18 +6,75 @@ function Validator(config){
 	function fn(propex, value, augmentors){
 		if(typeof propex == "string")
 			propex = Px(propex);
-		var isArray = propex.isArray,
-			valid = isArray? [] : {},
-			errors = isArray? [] : {};
+		
+		var isArray = propex.isArray;
+		var result = propex.recurse(value, {
+			found: function(property, key, item, context){
+//				console.log("found",tabs.substr(0, depth), name, value, property.name);
+				var actions = context.actions[key];
+				var valid = context.valid;
+				var errors = context.errors;
 
-		disseminate(value, { name:"-1", isOptional:false, subproperties:propex }, isArray, valid, errors, augmentors);
+				if(!actions) {
+					valid[key] = item;
+					return;
+				}
+				if(actions.parse) {
+					item = actions.parse(property.subproperties, item);
+					if(item.errors)
+						errors[key] = item.errors;
 
-		var result = { valid: valid };
-		//-1 means the top level object was missing or a type mismatch
-		if(errors["-1"])
-			result.errors = errors["-1"];
-		else if(Object.keys(errors).length)
-			result.errors = errors;
+					item = item.valid;
+				}
+
+				var errorMessage;
+				if(actions.test && (errorMessage = actions.test(item))){
+					errors[key] = errorMessage;
+				}
+				else{
+					if(actions.set) actions.set.call(property, valid, item);
+					else valid[key] = item;
+				}
+			},
+			objectStart: function(property, name, item, context){
+//				console.log("start",tabs.substr(0, depth++), name);
+				var isArray = Array.isArray(item);
+				var isRoot = name==null;
+				var newContext = {
+					valid: isArray? [] : {},
+					errors: isArray? [] : {},
+					actions: isRoot? config : context.actions[name]
+				};
+
+				if(!isRoot){
+					context.valid[name] = newContext.valid;
+					context.errors[name] = newContext.errors;
+				}
+
+				return newContext;
+			},
+			objectEnd: function(property, name, item, context){
+				return context;
+			},
+			missing: function(property, key, context){
+				var msg = Validator.errors.required(key);;
+				if(key==null) //root object was missing or a missmatch
+					return { errors: msg };
+				context.errors[key] = msg;
+			},
+			marker: function(property, key, item, context){
+				var marker = property.subproperties.marker;
+				if(marker && augmentors){
+					var aug = augmentors[marker];
+					aug && aug(property, key, item, context);
+				}
+			}
+		}, result);
+		
+		//string means the top level object was missing or a type mismatch
+		if(typeof result.errors !== "string" && !Object.keys(result.errors).length)
+			delete result.errors;
+			
 
 		return result;
 	}
@@ -35,80 +92,6 @@ function Validator(config){
 	})({});
 
 	return fn;
-
-	//----------------------------------------------------
-
-
-	function disseminate(value, property, isArray, valid, errors, augmentors){
-		if(!property.isOptional && (value == undefined || typeMismatch(isArray, value))) {
-			errors["-1"] = Validator.errors.required("-1", value);
-			return;
-		}
-		var subs = property.subproperties,
-			marker = subs.marker;
-
-		if(isArray) examineArray(value, subs, valid, errors);
-		else examineObject(value, subs, valid, errors);
-
-		if(marker && augmentors){
-			var aug = augmentors[marker];
-			aug && aug("-1", result);
-		}
-	}
-	function examineObject(obj, propex, valid, errors){
-		var pxi = propex.items;
-		Object.keys(pxi).forEach(function(key) {
-			examineItem(key, obj[key],  pxi[key], errors, valid, config[key]);
-		});
-	}
-	function examineArray(array, propex, valid, errors){
-		var defaultProperty = propex.items["-1"],
-			defaultValidator = config["-1"],
-			pxItems = propex.items,
-			validator,
-			property,
-			i;
-
-		for(i=0;i<array.length;i++){
-			if(i > propex.max){
-				break;
-			}
-			property = pxItems[i] || defaultProperty;
-			if (property == null)
-				throw new Error("No Property specifed for item[" + i + "] and no default is specified.");
-
-			validator = config[key] || defaultValidator;
-			examineItem(i, array[i],  property, errors, valid, validator);
-		}
-	}
-	function examineItem(key, item,  property, errors, valid, actions){
-		if(item == undefined || (property.items && typeMismatch(property.items.isArray, item))) {
-			if(!property.isOptional)
-				errors[key] = ((actions && actions.missing) || Validator.errors.required)(key, item);
-			return;
-		}
-
-		if(!actions) {
-			valid[key] = item;
-			return;
-		}
-		if(actions.parse) {
-			item = actions.parse(property.subproperties, item);
-			if(item.errors)
-				errors[key] = item.errors;
-
-			item = item.valid;
-		}
-
-		var errorMessage;
-		if(actions.test && (errorMessage = actions.test(item))){
-			errors[key] = errorMessage;
-		}
-		else{
-			if(actions.set) actions.set.call(property, valid, item);
-			else valid[key] = item;
-		}
-	}
 }
 Validator.errors = {
 	required: function(){ return "This information is required" }
