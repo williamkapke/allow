@@ -7,8 +7,7 @@ function Validator(config){
 		if(typeof propex == "string")
 			propex = Px(propex);
 		
-		var isArray = propex.isArray;
-		var result = propex.recurse(value, {
+		return propex.recurse(value, {
 			found: function(property, key, item, context){
 //				console.log("found",tabs.substr(0, depth), name, value, property.name);
 				var actions = context.actions[key];
@@ -41,6 +40,7 @@ function Validator(config){
 				var isArray = Array.isArray(item);
 				var isRoot = name==null;
 				var newContext = {
+					parent: context,
 					valid: isArray? [] : {},
 					errors: isArray? [] : {},
 					actions: isRoot? config :
@@ -51,15 +51,18 @@ function Validator(config){
 							context.actions :       //array
 							context.actions[name])  //object
 				};
-
-				if(!isRoot){
+				if(!isRoot)
 					context.valid[name] = newContext.valid;
-					context.errors[name] = newContext.errors;
-				}
 
 				return newContext;
 			},
 			objectEnd: function(property, name, item, context){
+				if(Object.keys(context.errors).length){
+					if(context.parent)
+						context.parent.errors[name] = context.errors;
+				}
+				else delete context.errors;//this takes care of the root object
+
 				return context;
 			},
 			missing: function(property, key, context){
@@ -75,14 +78,7 @@ function Validator(config){
 					aug && aug(property, key, item, context);
 				}
 			}
-		}, result);
-		
-		//string means the top level object was missing or a type mismatch
-		if(typeof result.errors !== "string" && !Object.keys(result.errors).length)
-			delete result.errors;
-			
-
-		return result;
+		});
 	}
 	fn.constructor = Validator;
 	fn.__proto__ = Validator.prototype;

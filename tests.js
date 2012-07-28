@@ -24,13 +24,13 @@ vows.describe("Validation tests")
 					assert.equal(typeof v, 'function');
 				}
 			},
-			"with a sub Validator": {
+			"with a nested Validator": {
 				topic: function(){
 					return new Validator({
 						people: new Validator()
 					})
 				},
-				"should populate sub errors": {
+				"should populate nested errors": {
 					topic: function(validate){
 						return validate("{people{name,phone,role}}", {people:{}});
 					},
@@ -233,14 +233,22 @@ vows.describe("Validation tests")
 					assert.equal(result.errors.nested[1].something, "no nonono");
 				}
 			},
-			"with a nested object":{
+			"with invalid nested items":{
 				topic: function(validate){
 					return validate("{nested{something}}", {name:"Nicole",nested:{something:"bad"}});
 				},
-				"should test the nested object and invalid items": function(result){
+				"should have errors for the invalid items": function(result){
 					assert.isDefined(result.errors);
 					assert.isDefined(result.errors.nested);
 					assert.equal(result.errors.nested.something, "no nonono");
+				}
+			},
+			"with valid nested items":{
+				topic: function(validate){
+					return validate("{nested{something}}", {name:"Nicole",nested:{something:"gooood"}});
+				},
+				"should not yield an error object": function(result){
+					assert.isUndefined(result.errors);
 				}
 			}
 		}
