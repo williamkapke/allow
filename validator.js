@@ -43,7 +43,13 @@ function Validator(config){
 				var newContext = {
 					valid: isArray? [] : {},
 					errors: isArray? [] : {},
-					actions: isRoot? config : context.actions[name]
+					actions: isRoot? config :
+						//arrays use the same actions over and over and
+						//cause objectStart to fire once for the array,
+						//and then once for every object in it. 
+						(typeof name == "number"?
+							context.actions :       //array
+							context.actions[name])  //object
 				};
 
 				if(!isRoot){
@@ -84,7 +90,7 @@ function Validator(config){
 		Object.keys(config || {}).forEach(function(k) {
 			var v = config[k];
 			if(v.constructor == Validator){
-				temp[k] = { parse: v };
+				temp[k] = v.validators;
 			}
 			else temp[k] = clone(v);
 		});

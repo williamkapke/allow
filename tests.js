@@ -30,10 +30,6 @@ vows.describe("Validation tests")
 						people: new Validator()
 					})
 				},
-				"converted the Validator object to {parse: ... }": function(v){
-					assert.includes(v.validators, 'people');
-					assert.includes(v.validators.people,'parse');
-				},
 				"should populate sub errors": {
 					topic: function(validate){
 						return validate("{people{name,phone,role}}", {people:{}});
@@ -172,7 +168,14 @@ vows.describe("Validation tests")
 						set: function(model, value) {
 							model[this.name] = value+" is a suitable name.";
 						}
-					}
+					},
+					"nested": new Validator({
+						"something": {
+							test: function(value){
+								if(value.length < 4) return "no nonono";
+							}
+						}
+					})
 				});
 			},
 			"short name":{
@@ -193,6 +196,28 @@ vows.describe("Validation tests")
 					assert.isUndefined(result.errors);
 					assert.include(result.valid, 'name');
 					assert.equal(result.valid.name, "Nicole is a suitable name.");
+				}
+			},
+			"with nested arrays":{
+				topic: function(validate){
+					debugger;
+					return validate("{nested[{something}]}", {name:"Nicole",nested:[{something:"good"},{something:"bad"}]});
+				},
+				"should find errors": function(result){
+					assert.isDefined(result.errors);
+					assert.isDefined(result.errors.nested);
+					assert.isDefined(result.errors.nested[1]);
+					assert.equal(result.errors.nested[1].something, "no nonono");
+				}
+			},
+			"with a nested object":{
+				topic: function(validate){
+					return validate("{nested{something}}", {name:"Nicole",nested:{something:"bad"}});
+				},
+				"should find errors": function(result){
+					assert.isDefined(result.errors);
+					assert.isDefined(result.errors.nested);
+					assert.equal(result.errors.nested.something, "no nonono");
 				}
 			}
 		}
