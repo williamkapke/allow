@@ -1,6 +1,6 @@
 {
 	"name": "propex-validation",
-	"version": "0.0.6",
+	"version": "0.0.7",
 	"description": "Uses Propex to validate javascript objects",
 	"keywords": ["propex", "property expressions", "json validation"],
 	"homepage": "http://github.com/williamwicks/propex-validation",
