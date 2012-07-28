@@ -46,7 +46,7 @@ vows.describe("Validation tests")
 		}
 	})
 	.addBatch({
-		'Validator for {name:"ACME"}': {
+		'Basic propex concepts: ': {
 			topic: function(){
 				return new Validator({
 					name: { test: function(value) { if(value != "roojoo") return "Booooo. Bad kitty." } }
@@ -153,8 +153,32 @@ vows.describe("Validation tests")
 						assert.isUndefined(result.valid.xtra);
 					}
 				},
+				'Data:{name:"roojoo"}': {
+					topic: function(validate){
+						return validate('{name,type}', {name:"roojoo"});
+					},
+					"should complain about the missing property": function(result){
+						assert.isDefined(result.errors);
+						assert.equal(result.errors.type, 'This information is required');
+					}
+				},
 				"bookend": {}
-			}
+			},
+			'Optional property': {
+				'with missing data': {
+					topic: function(validate){
+						return validate('{type?}', {name:"roojoo"});
+					},
+					"should not be in 'result.valid' object": function(result){
+						assert.isEmpty(result.valid);
+					},
+					"should not be in 'result.error' object": function(result){
+						assert.isUndefined(result.errors);
+					}
+				},
+				"bookend": {}
+			},
+			"bookend": {}
 		}
 	})
 	.addBatch({
@@ -200,10 +224,9 @@ vows.describe("Validation tests")
 			},
 			"with nested arrays":{
 				topic: function(validate){
-					debugger;
 					return validate("{nested[{something}]}", {name:"Nicole",nested:[{something:"good"},{something:"bad"}]});
 				},
-				"should find errors": function(result){
+				"should test array items and fail invalid items": function(result){
 					assert.isDefined(result.errors);
 					assert.isDefined(result.errors.nested);
 					assert.isDefined(result.errors.nested[1]);
@@ -214,7 +237,7 @@ vows.describe("Validation tests")
 				topic: function(validate){
 					return validate("{nested{something}}", {name:"Nicole",nested:{something:"bad"}});
 				},
-				"should find errors": function(result){
+				"should test the nested object and invalid items": function(result){
 					assert.isDefined(result.errors);
 					assert.isDefined(result.errors.nested);
 					assert.equal(result.errors.nested.something, "no nonono");

@@ -13,7 +13,7 @@
 		"email" : "wjwicks@gmail.com"
 	},
 	"dependencies": {
-		"propex":">=0.2.1"
+		"propex":">=0.2.2"
 	},
 	"devDependencies": {
 		"vows":"*"
