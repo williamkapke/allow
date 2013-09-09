@@ -1,4 +1,5 @@
-[propex-validation](http://williamwicks.github.com/propex-validation) is a small framework for validating javascript objects against a [propex](http://williamwicks.github.com/propex) and a Validator object.
+[propex-validation](http://williamwicks.github.com/propex-validation) is a small framework for validating 
+javascript objects against a [propex](https://github.com/williamwicks/propex) and a Validator object.
 
 
 ##The Validator object
