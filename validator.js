@@ -48,8 +48,8 @@ function Validator(config){
 						//cause objectStart to fire once for the array,
 						//and then once for every object in it.
 						(typeof name == "number"?
-							context.actions :       //array
-							context.actions[name])  //object
+							(context.actions||{}) :       //array
+							(context.actions||{})[name])  //object
 				};
 				if(!isRoot)
 					context.valid[name] = newContext.valid;

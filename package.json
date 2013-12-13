@@ -1,6 +1,6 @@
 {
 	"name": "propex-validation",
-	"version": "0.0.9",
+	"version": "1.0.0",
 	"description": "Uses Propex to validate javascript objects",
 	"keywords": ["propex", "property expressions", "json validation"],
 	"homepage": "http://github.com/williamwicks/propex-validation",
@@ -13,7 +13,7 @@
 		"email": "wjwicks@gmail.com"
 	},
 	"dependencies": {
-		"propex":">=0.2.2"
+		"propex":"~2.0.0"
 	},
 	"devDependencies": {
 		"mocha": "~1.14.0",

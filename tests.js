@@ -53,8 +53,9 @@ describe("Using propex '[]'", function() {
 		});
 	});
 	describe("and try to validate a simple Array", function() {
-		it("should cause an error", function() {
-			(function(){ validate(px, [1,2,3]); }).should.throw();
+		it("should just copy the values", function() {
+			var result = validate(px, [1,2,3]);
+			result.valid.should.eql([1,2,3]);
 		});
 	});
 });
@@ -160,9 +161,25 @@ describe("Nested data", function() {
 			result.errors.whatever.should.have.property('is');
 			result.errors.whatever.is.should.equal(Validator.errors.required());
 		});
-		it("should only validate existance", function(){
+		it("should just copy the array", function(){
 			var result = validate('{whatever{is}}', {whatever:{is:['here','is','ok']}});
 			result.valid.should.eql({whatever:{is:['here','is','ok']}});
+		});
+	});
+	describe("containing arrays with min & max", function() {
+
+		it("should should require the minimum", function(){
+			var result = validate('[]2:4', [9]);
+			result.should.have.property('errors');
+			result.errors.should.not.have.property(0);
+			result.errors.should.have.property(1);
+			result.errors[1].should.eql(Validator.errors.required());
+		});
+		it("should ignore anything beyond the maximum", function(){
+			var result = validate('[]2:4', [9,8,7,6,5,4,3]);
+			result.valid.should.not.have.property('errors');
+			result.valid.should.have.length(4);
+			result.valid.should.eql([9,8,7,6]);
 		});
 	});
 });
