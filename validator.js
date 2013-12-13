@@ -4,13 +4,14 @@ var Px = require("propex");
 function Validator(config){
 	
 	function fn(propex, value, augmentors){
+		if(!propex)
+			return { valid: value };
 		if(typeof propex == "string")
 			propex = Px(propex);
-		
+
 		return propex.recurse(value, {
 			found: function(property, key, item, context){
-//				console.log("found",tabs.substr(0, depth), name, value, property.name);
-				var actions = context.actions[key];
+				var actions = context.actions && context.actions[key];
 				var valid = context.valid;
 				var errors = context.errors;
 
@@ -36,7 +37,6 @@ function Validator(config){
 				}
 			},
 			objectStart: function(property, name, item, context){
-//				console.log("start",tabs.substr(0, depth++), name);
 				var isArray = Array.isArray(item);
 				var isRoot = name==null;
 				var newContext = {
@@ -46,7 +46,7 @@ function Validator(config){
 					actions: isRoot? config :
 						//arrays use the same actions over and over and
 						//cause objectStart to fire once for the array,
-						//and then once for every object in it. 
+						//and then once for every object in it.
 						(typeof name == "number"?
 							context.actions :       //array
 							context.actions[name])  //object

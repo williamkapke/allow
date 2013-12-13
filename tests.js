@@ -148,6 +148,24 @@ describe("Optional properites", function() {
 		});
 	});
 });
+describe("Nested data", function() {
+	var validate = new Validator();
+
+	describe("containing arrays and do not have propex info for the array contents", function() {
+
+		it("should only validate existance", function(){
+			var result = validate('{whatever{is}}', {whatever:{}});
+			result.should.have.property('errors');
+			result.errors.should.have.property('whatever');
+			result.errors.whatever.should.have.property('is');
+			result.errors.whatever.is.should.equal(Validator.errors.required());
+		});
+		it("should only validate existance", function(){
+			var result = validate('{whatever{is}}', {whatever:{is:['here','is','ok']}});
+			result.valid.should.eql({whatever:{is:['here','is','ok']}});
+		});
+	});
+});
 
 describe("Using sample Validator", function() {
 	var validate = new Validator({
