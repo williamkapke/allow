@@ -28,7 +28,7 @@ function Validator(config){
 				}
 
 				var errorMessage;
-				if(actions.test && (errorMessage = actions.test(item))){
+				if(actions.test && (errorMessage = actions.test(item, valid))){
 					errors[key] = errorMessage;
 				}
 				else{
