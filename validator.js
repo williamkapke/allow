@@ -9,7 +9,7 @@ function Validator(config){
 		if(typeof propex == "string")
 			propex = Px(propex);
 
-		return propex.recurse(value, {
+		var result = propex.recurse(value, {
 			found: function(property, key, item, context){
 				var actions = context.actions && context.actions[key];
 				var valid = context.valid;
@@ -39,8 +39,7 @@ function Validator(config){
 			objectStart: function(property, name, item, context){
 				var isArray = Array.isArray(item);
 				var isRoot = name==null;
-				var newContext = {
-					parent: context,
+				return {
 					valid: isArray? [] : {},
 					errors: isArray? [] : {},
 					actions: isRoot? config :
@@ -51,22 +50,24 @@ function Validator(config){
 							(context.actions||{}) :       //array
 							(context.actions||{})[name])  //object
 				};
-				if(!isRoot)
-					context.valid[name] = newContext.valid;
-
-				return newContext;
 			},
-			objectEnd: function(property, name, item, context){
-				if(Object.keys(context.errors).length){
-					if(context.parent)
-						context.parent.errors[name] = context.errors;
-				}
-				else delete context.errors;//this takes care of the root object
+			objectEnd: function(property, name, sub_result, context){
+				//return the root result object
+				if(name===null)
+					return (Object.keys(sub_result.errors).length)?
+						{ valid:sub_result.valid, errors:sub_result.errors } :
+						{ valid:sub_result.valid };
+
+
+				context.valid[name] = sub_result.valid;
+
+				if(Object.keys(sub_result.errors).length)
+					context.errors[name] = sub_result.errors;
 
 				return context;
 			},
 			missing: function(property, key, context){
-				var msg = Validator.errors.required(key);;
+				var msg = Validator.errors.required(key);
 				if(key==null) //root object was missing or a missmatch
 					return { errors: msg };
 				context.errors[key] = msg;
@@ -79,6 +80,7 @@ function Validator(config){
 				}
 			}
 		});
+		return result;
 	}
 	fn.constructor = Validator;
 	fn.__proto__ = Validator.prototype;
@@ -97,12 +99,8 @@ function Validator(config){
 }
 Validator.errors = {
 	required: function(){ return "This information is required" }
-}
+};
 
-function typeMismatch(isArray, data){
-	var dataIsArray = Array.isArray(data);
-	return (isArray && !dataIsArray) || (!isArray && dataIsArray)
-}
 function clone(obj){
 	var obj2 = {};
 	Object.keys(obj).forEach(function(k) {
