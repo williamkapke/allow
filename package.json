@@ -1,32 +1,32 @@
 {
-	"name": "propex-validation",
-	"version": "1.0.7",
-	"description": "Uses Propex to validate javascript objects",
-	"keywords": ["propex", "property expressions", "json validation"],
-	"homepage": "http://github.com/williamwicks/propex-validation",
-	"repository": {
-		"type": "git",
-		"url": "git@github.com:williamwicks/propex-validation.git"
-	},
-	"author": {
-		"name": "William Wicks",
-		"email": "wjwicks@gmail.com"
-	},
-	"dependencies": {
-		"propex":"^5.0.1"
-	},
-	"devDependencies": {
-		"mocha": "~1.14.0",
-		"should": "~2.1.1"
-	},
-	"main": "index",
-	"engines": {
-		"node": "*"
-	},
-	"licenses": [
-		{
-			"type": "MIT",
-			"url": "http://www.opensource.org/licenses/MIT"
-		}
-	]
+  "name": "propex-validation",
+  "version": "1.0.8",
+  "description": "Uses Propex to validate javascript objects",
+  "keywords": ["propex", "property expressions", "json validation"],
+  "homepage": "http://github.com/williamkapke/propex-validation",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/williamkapke/propex-validation.git"
+  },
+  "author": {
+    "name": "William Kapke",
+    "email": "william.kapke@gmail.com"
+  },
+  "dependencies": {
+    "propex":"^5"
+  },
+  "devDependencies": {
+    "mocha": "~1.14.0",
+    "should": "~2.1.1"
+  },
+  "main": "validator.js",
+  "engines": {
+    "node": "*"
+  },
+  "licenses": [
+    {
+      "type": "MIT",
+      "url": "http://www.opensource.org/licenses/MIT"
+    }
+  ]
 }

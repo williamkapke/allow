@@ -1,46 +1,82 @@
-[propex-validation](http://williamwicks.github.com/propex-validation) is a small framework for validating 
-javascript objects against a [propex](https://github.com/williamwicks/propex) and a Validator object.
+[propex-validation](http://williamkapke.github.com/propex-validation) is a small framework for validating
+javascript objects against a [propex](https://github.com/williamkapke/propex) and a Validator object.
 
-
-##The Validator object
-```javascript
-var validator = new Validator({
-	name: {
-		test: function(value){ if(value.length>30) return "Too long";},
-		set: function(model, value){
-			model.name = value + " is awesome";
-		}
-	},
-	locations: new Validator({
-		storeid: {
-			test: function(value){ if(isNaN(value)) return "Numeric Id needed"; }
-		},
-		position: {
-			parse: function(propex, data){ return data.lng+","+data.lat },
-			test: function(value){ if(/^\d\d,\d\d$/.test(value)) return "Lng & Lat cannot be over 99"; }
-		},
-		departments: {
-			missing: function() { return "You're going to need to provide these"; },
-			parse: new Validator({
-				name: { test: length(3,32) },
-				phone: { test: function(value) { if(!/^\d\d\d-?\d\d\d-?\d\d\d\d$/.test(value)) return "Bad phone number"; } }
-			}),
-			test: function(value) { if(value.length<2) return "You're going to need to provide more"; },
-			set: function(model, value) { model.departments = value; }
-		}
-	})
-});
-```
 
 ##Example validation
 ```javascript
-var result = validator("{StoreName,Departments[0{Name,Phone,Hours},1{Name,Phone?,Hours?}]1:5?}",{
-	StoreName:"Walmart",
-	Departments: [
-		{Name:"Main", Phone:"1231231234", Hours: "9-5"},
-		{Name:"Pharmacy", Phone:"1235551212"}
-	]
-})
+var Validator = require("propex-validation");
+var validate = {};
+
+validate.department = new Validator({
+  name: function(value){
+    if(value.length<3)  return "Too Short";
+    if(value.length>30) return "Too long";
+  },
+  phone: { test: function(value) { if(!/^\d\d\d-?\d\d\d-?\d\d\d\d$/.test(value)) return "Bad phone number"; } }
+});
+
+validate.location = new Validator({
+  storeid: {
+    test: function(value){ if(isNaN(value)) return "Numeric Id needed"; }
+  },
+  position: {
+    parse: function(propex, data){ return data.lng+","+data.lat },
+    test: function(value){ if(/^\d\d,\d\d$/.test(value)) return "Lng & Lat cannot be over 99"; }
+  },
+  //something more complicated...
+  departments: {
+    missing: function() { return "You're going to need to provide these"; },
+    //custom parser
+    parse: validate.department,
+    test: function(value) { if(value.length<2) return "You're going to need to provide more"; },
+    set: function(model, value) { model.departments = value; }
+  }
+});
+
+
+var posted_data = {
+  name:"Walmart of San Francisco",
+  departments: [
+    {name:"Main", phone:"1231231234", hours:"9-5"},
+    {name:"Pharmacy", phone:"1235551212"}
+  ]
+};
+
+//create a propex that defines *what* you want validated
+var px = "{name,storeid?,postition?,departments[0{name,phone,hours},1{name,phone?,hours?}]1:3?}";
+
+//apply the propex and the data to the Validator
+var result = validate.location(px,posted_data);
+
+//checkout the results
+console.log(JSON.stringify(result, null, 2));
+```
+
+This will output:
+```json
+{
+  "valid": {
+    "name": "Walmart of San Francisco",
+    "departments": [
+      {
+        "name": "Main",
+        "phone": "1231231234",
+        "hours": "9-5"
+      },
+      {
+        "name": "Pharmacy",
+        "phone": "1235551212"
+      }
+    ]
+  },
+  "errors": {
+    "departments": [
+      null,
+      null,
+      "This information is required"
+    ]
+  }
+}
 ```
 
 # Installation
@@ -50,7 +86,7 @@ var result = validator("{StoreName,Departments[0{Name,Phone,Hours},1{Name,Phone?
 ## License
 
 The MIT License (MIT)
-Copyright (c) 2012 William Wicks
+Copyright (c) 2012 William Kapke
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of
 this software and associated documentation files (the "Software"), to deal in
