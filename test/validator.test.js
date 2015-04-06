@@ -1,6 +1,5 @@
-var should=require("should");
-var assert = require('assert');
-var Validator = require("./validator");
+var should = require("should");
+var allow = require("./../allow");
 
 function length(min, max) { return function(value){
 	if(value.length<min) return "Too short";
@@ -13,13 +12,13 @@ function length(min, max) { return function(value){
 describe("Constructing a Validator", function() {
 	describe("without any params", function() {
 		it("should be doable", function(){
-			var validate = new Validator();
+			var validate = allow();
 			validate.should.be.type('function');
 		})
 	});
 	describe("with a nested Validator", function() {
-		var validate = new Validator({
-			people: new Validator()
+		var validate = allow({
+			people: allow()
 		});
 		var result = validate("{people{name,phone,role}}", {people:{}});
 
@@ -33,7 +32,7 @@ describe("Constructing a Validator", function() {
 	})
 });
 describe("Using propex '[]'", function() {
-	var validate = new Validator({
+	var validate = allow({
 		name: { test: function(value) { if(value != "roojoo") return "Booooo. Bad kitty." } }
 	});
 	var px = '[]';
@@ -41,7 +40,7 @@ describe("Using propex '[]'", function() {
 	describe("and try to validate against an Object", function() {
 		it("should return the default 'required' message", function() {
 			var result = validate(px, {});
-			result.errors.should.equal(Validator.errors.required());
+			result.errors.should.equal(allow.errors.missing);
 		});
 	});
 	describe("and try to validate an empty Array", function() {
@@ -60,7 +59,7 @@ describe("Using propex '[]'", function() {
 	});
 });
 describe("Using propex '{}'", function() {
-	var validate = new Validator({
+	var validate = allow({
 		name: { test: function(value) { if(value != "roojoo") return "Booooo. Bad kitty." } }
 	});
 	var px = '{}';
@@ -76,7 +75,7 @@ describe("Using propex '{}'", function() {
 	describe("and trying to validate against an Array", function() {
 		it("should return the default 'required' message", function() {
 			var result = validate(px, []);
-			result.errors.should.equal(Validator.errors.required());
+			result.errors.should.equal(allow.errors.missing);
 		});
 	});
 	describe("validating an object with extra properties", function() {
@@ -90,7 +89,7 @@ describe("Using propex '{}'", function() {
 	});
 });
 describe("Using propex '{name,type}'", function() {
-	var validate = new Validator({
+	var validate = allow({
 		name: { test: function(value) { if(value != "roojoo") return "Booooo. Bad kitty." } }
 	});
 	var px = '{name,type}';
@@ -98,7 +97,7 @@ describe("Using propex '{name,type}'", function() {
 	describe("and trying to validate against 'undefined'", function() {
 		it("should return the default 'required' message", function() {
 			var result = validate(px, undefined);
-			result.errors.should.equal(Validator.errors.required());
+			result.errors.should.equal(allow.errors.missing);
 		});
 	});
 	describe("and trying to validate against an empty Object", function() {
@@ -128,12 +127,12 @@ describe("Using propex '{name,type}'", function() {
 		it("should complain about the missing property", function() {
 			var result = validate(px, {name:"roojoo"});
 			result.should.have.property('errors');
-			result.errors.type.should.eql('This information is required');
+			result.errors.type.should.eql(allow.errors.missing);
 		});
 	});
 });
 describe("Optional properites", function() {
-	var validate = new Validator({
+	var validate = allow({
 		name: { test: function(value) { if(value != "roojoo") return "Booooo. Bad kitty." } }
 	});
 	var px = '{type?}';
@@ -150,7 +149,7 @@ describe("Optional properites", function() {
 	});
 });
 describe("Nested data", function() {
-	var validate = new Validator();
+	var validate = allow();
 
 	describe("containing arrays and do not have propex info for the array contents", function() {
 
@@ -159,7 +158,7 @@ describe("Nested data", function() {
 			result.should.have.property('errors');
 			result.errors.should.have.property('whatever');
 			result.errors.whatever.should.have.property('is');
-			result.errors.whatever.is.should.equal(Validator.errors.required());
+			result.errors.whatever.is.should.equal(allow.errors.missing);
 		});
 		it("should just copy the array", function(){
 			var result = validate('{whatever{is}}', {whatever:{is:['here','is','ok']}});
@@ -173,7 +172,7 @@ describe("Nested data", function() {
 			result.should.have.property('errors');
 			result.errors.should.not.have.property(0);
 			result.errors.should.have.property(1);
-			result.errors[1].should.eql(Validator.errors.required());
+			result.errors[1].should.eql(allow.errors.missing);
 		});
 		it("should ignore anything beyond the maximum", function(){
 			var result = validate('[]2:4', [9,8,7,6,5,4,3]);
@@ -185,7 +184,7 @@ describe("Nested data", function() {
 });
 
 describe("Using sample Validator", function() {
-	var validate = new Validator({
+	var validate = allow({
 		"name": {
 			test: function(value){
 				if(value.length < 4) return "Dude, "+value+", your name is too short!";
@@ -194,7 +193,7 @@ describe("Using sample Validator", function() {
 				model[this.name] = value+" is a suitable name.";
 			}
 		},
-		"nested": new Validator({
+		"nested": allow({
 			"something": {
 				test: function(value){
 					if(value.length < 4) return "no nonono";
@@ -213,16 +212,16 @@ describe("Using sample Validator", function() {
 		});
 	});
 	describe("test a valid name", function() {
-		var result = validate("{name}", {name:"Nicole"});
+		var result = validate("{name}", {name:"Anna"});
 
 		it("should call 'set'", function(){
 			result.should.not.have.property('errors');
 			result.valid.should.have.property('name');
-			result.valid.name.should.eql("Nicole is a suitable name.");
+			result.valid.name.should.eql("Anna is a suitable name.");
 		});
 	});
 	describe("test nested arrays", function() {
-		var result = validate("{nested[{something}]}", {name:"Nicole",nested:[{something:"good"},{something:"bad"}]});
+		var result = validate("{nested[{something}]}", {name:"Anna",nested:[{something:"good"},{something:"bad"}]});
 
 		it("should test array items and fail invalid items", function(){
 			result.should.have.property('errors');
@@ -231,7 +230,7 @@ describe("Using sample Validator", function() {
 		});
 	});
 	describe("test invalid nested items", function() {
-		var result = validate("{nested{something}}", {name:"Nicole",nested:{something:"bad"}});
+		var result = validate("{nested{something}}", {name:"Anna",nested:{something:"bad"}});
 
 		it("should have errors for the invalid items", function(){
 			result.should.have.property('errors');
@@ -240,7 +239,7 @@ describe("Using sample Validator", function() {
 		});
 	});
 	describe("test valid nested items", function() {
-		var result = validate("{nested{something}}", {name:"Nicole",nested:{something:"gooood"}});
+		var result = validate("{nested{something}}", {name:"Anna",nested:{something:"gooood"}});
 
 		it("should not yield an error object", function(){
 			result.should.not.have.property('errors');
