@@ -7,8 +7,8 @@ javascript objects against a [propex](https://propex.org) and a `Validator` obje
 var allow = require('allow');
 
 var validate = allow({
-  first: allow.string(/[a-z]/,1,50),
-  last: allow.string(/[a-z]/,1,50),
+  first: allow.string(/^[a-z]+$/,1,50),
+  last: allow.string(/^[a-z]+$/,1,50),
   gender: allow.string(/^m|f$/),
   dob: allow.isodate.before('2000-01-01'),
   email: allow.email,
