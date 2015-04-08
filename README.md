@@ -6,23 +6,25 @@ javascript objects against a [propex](https://propex.org) and a `Validator` obje
 ```javascript
 var allow = require('allow');
 
-var validate = allow({
-  first: allow.string(/^[a-zA-Z]+$/,1,50),
-  last: allow.string(/^[a-z]+$/,1,50),
-  gender: allow.string(/^m|f$/),
-  dob: allow.isodate.before('2000-01-01'),
-  email: allow.email,
-  password: allow.string(/^[!-~]+$/,6,32),
-  photos: allow({
-    url: allow.string(10,255),
-    caption: allow.string(1,140),
-    taken: allow.isodate.before('now'),
-    location: allow.string(/^\d\d(\.\d+)?,\d\d(\.\d+)?$/).from(function (propex, data) {
-      if(typeof data.lng === 'number' && typeof data.lat === 'number')
-        return data.lng + "," + data.lat;
+var validate = {
+  user: allow({
+    first: allow.string(/^[a-zA-Z]+$/,1,50),
+    last: allow.string(/^[a-z]+$/,1,50),
+    gender: allow.string(/^m|f$/),
+    dob: allow.isodate.before('2000-01-01'),
+    email: allow.email,
+    password: allow.string(/^[!-~]+$/,6,32),
+    photos: allow({
+      url: allow.string(10,255),
+      caption: allow.string(1,140),
+      taken: allow.isodate.before('now'),
+      location: allow.string(/^\d\d(\.\d+)?,\d\d(\.\d+)?$/).from(function (propex, data) {
+        if(typeof data.lng === 'number' && typeof data.lat === 'number')
+          return data.lng + "," + data.lat;
+      })
     })
   })
-});
+};
 
 var posted_data = {
   first: 'William',
@@ -47,7 +49,7 @@ var posted_data = {
 var px = "{first,last,gender?,dob,email,password,photos[{url,caption?,taken?,location?}]2:3?}";
 
 //apply the propex and the data to the Validator
-var result = validate(px, posted_data);
+var result = validate.user(px, posted_data);
 
 //checkout the results
 console.log(JSON.stringify(result, null, 2));
@@ -85,6 +87,20 @@ This will output:
   }
 }
 ```
+
+## Middleware
+You can use [allow](https://github.com/williamkapke/allow) as middleware with
+[Express](https://github.com/strongloop/express)/[Restify](https://github.com/mcavage/node-restify).
+
+```javascript
+  app.post("/authenticate", validate.user.require('{email,password}'), function(req, res){
+    //lookup user credentials
+    return res.json({token:'9023JGIONW90023NNOIA'});
+  });
+```
+
+Each validator has a `require` method that returns a middleware compatible function. If there are any errors, it
+responds with a `400` status code and the `errors` (as JSON) in the body.
 
 # Installation
 
