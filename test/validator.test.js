@@ -151,17 +151,19 @@ describe("Optional properites", function() {
 describe("Nested data", function() {
 	var validate = allow();
 
-	describe("containing arrays and do not have propex info for the array contents", function() {
+  it("should only validate existance", function(){
+    var result = validate('{whatever{is}}', {whatever:{}});
+    result.should.have.property('errors');
+    result.errors.should.have.property('whatever');
+    result.errors.whatever.should.have.property('is');
+    result.errors.whatever.is.should.equal(allow.errors.missing);
+  });
 
-		it("should only validate existance", function(){
-			var result = validate('{whatever{is}}', {whatever:{}});
-			result.should.have.property('errors');
-			result.errors.should.have.property('whatever');
-			result.errors.whatever.should.have.property('is');
-			result.errors.whatever.is.should.equal(allow.errors.missing);
-		});
+  describe("containing arrays and do not have propex info for the array contents", function() {
+
 		it("should just copy the array", function(){
 			var result = validate('{whatever{is}}', {whatever:{is:['here','is','ok']}});
+      result.should.not.have.property('errors');
 			result.valid.should.eql({whatever:{is:['here','is','ok']}});
 		});
 	});
@@ -169,6 +171,7 @@ describe("Nested data", function() {
 
 		it("should should require the minimum", function(){
 			var result = validate('[]2:4', [9]);
+
 			result.should.have.property('errors');
 			result.errors.should.not.have.property(0);
 			result.errors.should.have.property(1);
@@ -189,8 +192,8 @@ describe("Using sample Validator", function() {
 			test: function(value){
 				if(value.length < 4) return "Dude, "+value+", your name is too short!";
 			},
-			set: function(model, value) {
-				model[this.name] = value+" is a suitable name.";
+			set: function(key, value, model) {
+				model[key] = value+" is a suitable name.";
 			}
 		},
 		"nested": allow({

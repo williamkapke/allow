@@ -13,12 +13,16 @@ function allow(definition) {
 function Actions(tester) {
   this.test = tester;
 }
-Actions.prototype.from = function (parser) {
-  this.parse = parser;
+Actions.prototype.from = function (finder) {
+  this.find = finder;
   return this;
 };
 Actions.prototype.then = function (setter) {
   this.set = setter;
+  return this;
+};
+Actions.prototype.else = function (setter) {
+  this.missing = setter;
   return this;
 };
 
@@ -76,7 +80,7 @@ function date(iso) {
       if(isNaN(parse(value))) return allow.errors.invalid;
     },
     after: function (date) {
-      date = new Date(date);
+      date = date==='now'? new Date : new Date(date);
       return {
         test: function (value) {
           value = parse(value);
@@ -86,7 +90,7 @@ function date(iso) {
       };
     },
     before: function (date) {
-      date = new Date(date);
+      date = date==='now'? new Date : new Date(date);
       return {
         test: function (value) {
           value = parse(value);
@@ -96,8 +100,8 @@ function date(iso) {
       };
     },
     between: function (min, max) {
-      min = new Date(min);
-      max = new Date(max);
+      min = min==='now'? new Date : new Date(min);
+      max = max==='now'? new Date : new Date(max);
       return {
         test: function (value) {
           value = parse(value);
@@ -129,95 +133,56 @@ allow.errors = {
 
 function validator(config) {
 
-  function fn(propex, value, augmentors) {
+  function fn(propex, value) {
     if (!propex)
       return {valid: value};
     if (typeof propex == "string")
       propex = Px(propex);
 
-    return propex.recurse(value, {
-      found: function (property, key, item, context) {
-        var isValidator = context.config && context.config.constructor === fn.constructor;
-        var config = isValidator? context.config.validators : context.config;
+    if(!exists(value) || (typeMismatch(propex, value)))
+      return { errors: allow.errors.missing };
 
-        var actions = config && config[key];
-        var valid = context.valid;
-        var errors = context.errors;
+    function recurser(property, key) {
+      if(typeof key === 'number' && (key > this.max))
+        return true; //end of array
+      var actions = this.config[key];
 
-        if (!actions) {
-          valid[key] = item;
-          return;
+      var item = actions && actions.find? actions.find(key, this.source) : this.source[key];
+      var subs = property.subproperties;
+
+      if(!exists(item)){
+        if(!property.isOptional || (subs && typeMismatch(subs,item))) {
+          if(typeof key !== 'number' || key < this.min)
+            this.errors[key] = (actions && actions.missing && actions.missing()) || allow.errors.missing;
         }
-        if (actions.hasOwnProperty('parse')) {
-          item = actions.parse(property.subproperties, item);
-          if(isValidator) {
-            if (item.errors)
-              errors[key] = item.errors;
-
-            item = item.valid;
-            return;
-          }
-        }
-
-        var errorMessage;
-        if (actions.hasOwnProperty('test') && (errorMessage = actions.test(item, valid))) {
-          errors[key] = errorMessage;
-        }
-        else {
-          if (actions.hasOwnProperty('set')) actions.set.call(property, valid, item);
-          else valid[key] = item;
-        }
-      },
-      objectStart: function (property, name, item, context) {
-        var isArray = Array.isArray(item);
-        var isRoot = name == null;
-
-        return {
-          min: property.subproperties.min,
-          max: property.subproperties.max,
-          valid: isArray ? [] : {},
-          errors: isArray ? [] : {},
-          config: isRoot ? config :
-            //arrays use the same actions over and over and
-            //cause objectStart to fire once for the array,
-            //and then once for every object in it.
-            (typeof name == "number" ?
-              (context.config || {}) :       //array
-              (context.config || {})[name])  //object
-        };
-      },
-      objectEnd: function (property, name, sub_result, context) {
-        //return the root result object
-        if (name === null)
-          return (Object.keys(sub_result.errors).length) ?
-          {valid: sub_result.valid, errors: sub_result.errors} :
-          {valid: sub_result.valid};
-
-        if(property.subproperties.isArray && sub_result.valid.length < property.subproperties.min)
-          return context.errors[name] = allow.errors.under;
-
-        context.valid[name] = sub_result.valid;
-
-        if (Object.keys(sub_result.errors).length)
-          context.errors[name] = sub_result.errors;
-
-        return context;
-      },
-      missing: function (property, key, context) {
-        if (key == null) //root object was missing or a missmatch
-          return {errors: allow.errors.missing};
-
-        if(typeof key !== 'number' || key < context.min)
-          context.errors[key] = allow.errors.missing;
-      },
-      marker: function (property, key, item, context) {
-        var marker = property.subproperties.marker;
-        if (marker && augmentors) {
-          var aug = augmentors[marker];
-          aug && aug(property, key, item, context);
-        }
+        return;
       }
-    });
+
+      if(subs) {
+        var result = subs.recurse(recurser, new_context(property, item, actions || this.config));
+        item = result.valid;
+        if(Object.keys(result.errors).length)
+          this.errors[key] = result.errors;
+      }
+      else {
+        var error = actions && actions.test && actions.test(item);
+        if (error)
+          this.errors[key] = error;
+      }
+
+      if(!error) {
+        if (actions && actions.set)
+          actions.set(key, item, this.valid);
+        else this.valid[key] = item;
+      }
+    }
+
+    var property = { name:null, isOptional:false, subproperties:propex };
+    var context = new_context(property, value, fn);
+    var result = propex.recurse(recurser, context);
+    return Object.keys(result.errors).length ?
+            {valid: result.valid, errors: result.errors} :
+            {valid: result.valid};
   }
 
   fn.constructor = validator;
@@ -225,6 +190,24 @@ function validator(config) {
   fn.validators = config;
 
   return fn;
+}
+function new_context(property, source, config) {
+  var isArray = property.subproperties.isArray;
+  if(config.validators) config = config.validators;
+
+  return {
+    source: source,
+    min: property.subproperties.min || 0,
+    max: property.subproperties.max || source.length,
+    valid: isArray ? [] : {},
+    errors: isArray ? [] : {},
+    config: config
+  };
+}
+function exists(val) { return typeof val !== 'undefined'}
+function typeMismatch(propex, data){
+  var dataIsArray = Array.isArray(data);
+  return (propex.isArray && !dataIsArray) || (!propex.isArray && dataIsArray)
 }
 
 //middleware for express/restify

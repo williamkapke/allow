@@ -1,4 +1,4 @@
-[allow](http://williamkapke.github.com/allow) is a small framework for validating
+[allow](http://williamkapke.github.com/allow) is a small, yet powerful, framework for validating
 javascript objects against a [propex](https://propex.org) and a `Validator` object.
 
 
@@ -7,7 +7,7 @@ javascript objects against a [propex](https://propex.org) and a `Validator` obje
 var allow = require('allow');
 
 var validate = allow({
-  first: allow.string(/^[a-z]+$/,1,50),
+  first: allow.string(/^[a-zA-Z]+$/,1,50),
   last: allow.string(/^[a-z]+$/,1,50),
   gender: allow.string(/^m|f$/),
   dob: allow.isodate.before('2000-01-01'),
@@ -16,9 +16,10 @@ var validate = allow({
   photos: allow({
     url: allow.string(10,255),
     caption: allow.string(1,140),
-    taken: allow.isodate.before(new Date),
-    location: allow.string(/^\d\d,\d\d$/).from(function (propex, data) {
-      return data.lng + "," + data.lat;
+    taken: allow.isodate.before('now'),
+    location: allow.string(/^\d\d(\.\d+)?,\d\d(\.\d+)?$/).from(function (propex, data) {
+      if(typeof data.lng === 'number' && typeof data.lat === 'number')
+        return data.lng + "," + data.lat;
     })
   })
 });
@@ -35,7 +36,10 @@ var posted_data = {
       lat: 58.99502034,
       lng: 18.068842
     },
-    {}
+    {},
+    {},
+    {},//this will be ignored
+    {}//this will be ignored
   ]
 };
 
@@ -59,8 +63,10 @@ This will output:
     "photos": [
       {
         "url": "https://secure.gravatar.com/avatar/913d54c9cbbeeb8907786a18e6fbf844",
-        "caption": "Here I am!"
+        "caption": "Here I am!",
+        "location": "18.068842,58.99502034"
       },
+      {},
       {}
     ]
   },
@@ -69,6 +75,9 @@ This will output:
     "dob": "invalid",
     "photos": [
       null,
+      {
+        "url": "missing"
+      },
       {
         "url": "missing"
       }
