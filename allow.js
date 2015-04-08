@@ -9,6 +9,7 @@ function allow(definition) {
 
   return validator(definition);
 }
+allow.prototype = validator.prototype;
 
 function Actions(tester) {
   this.test = tester;
@@ -217,7 +218,7 @@ validator.prototype.require = function(propex){
     var result = self(propex, req.body);
 
     if(result.errors)
-      return res.status(400).send(result.errors);
+      return res.status(400).json(result.errors);
 
     req.model = result.valid;
     next();
