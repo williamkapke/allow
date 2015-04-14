@@ -1,6 +1,6 @@
 {
   "name": "allow",
-  "version": "1.0.1",
+  "version": "1.0.3",
   "description": "Uses Propex to validate javascript objects",
   "keywords": ["propex", "property expressions", "json", "validation", "filter"],
   "homepage": "http://github.com/williamkapke/allow",
