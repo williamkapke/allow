@@ -1,6 +1,6 @@
 {
   "name": "allow",
-  "version": "1.0.2",
+  "version": "1.0.1",
   "description": "Uses Propex to validate javascript objects",
   "keywords": ["propex", "property expressions", "json", "validation", "filter"],
   "homepage": "http://github.com/williamkapke/allow",
@@ -13,7 +13,7 @@
     "email": "william.kapke@gmail.com"
   },
   "dependencies": {
-    "propex":"^6.0.0"
+    "propex":"^6.0.1"
   },
   "devDependencies": {
     "mocha": "~1.14.0",
