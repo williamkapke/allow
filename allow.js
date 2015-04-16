@@ -217,8 +217,10 @@ validator.prototype.require = function(propex){
   return function(req, res, next){
     var result = self(propex, req.body);
 
-    if(result.errors)
-      return res.status(400).json(result.errors);
+    if(result.errors) {
+      res.statusCode = 400;
+      return res.json(result.errors);
+    }
 
     req.model = result.valid;
     next();
