@@ -1,3 +1,6 @@
+allow [![Circle CI](https://circleci.com/gh/williamkapke/allow.svg?style=svg)](https://circleci.com/gh/williamkapke/allow)
+=====
+
 [allow](http://williamkapke.github.com/allow) is a small, yet powerful, framework for validating
 javascript objects against a [propex](https://propex.org) and a `Validator` object.
 
