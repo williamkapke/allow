@@ -19,6 +19,9 @@
     "mocha": "~1.14.0",
     "should": "~2.1.1"
   },
+  "scripts": {
+    "test": "mocha"
+  },
   "main": "allow.js",
   "engines": {
     "node": "*"
