@@ -1,6 +1,6 @@
 {
   "name": "allow",
-  "version": "1.0.6",
+  "version": "1.0.7",
   "description": "Uses Propex to validate javascript objects",
   "keywords": [
     "propex",
