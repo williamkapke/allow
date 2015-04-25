@@ -248,6 +248,14 @@ describe("Using sample Validator", function() {
 			result.should.not.have.property('errors');
 		});
 	});
+
+  describe('passing only a string or propex to a validator', function () {
+    it('should return middleware', function () {
+      var result = validate("{nested{something}}");
+      result.should.be.a.function;
+      result.name.should.equal('validation_middleware');
+    });
+  });
 });
 
 

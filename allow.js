@@ -140,6 +140,9 @@ function validator(config) {
     if (typeof propex == "string")
       propex = Px(propex);
 
+    if(arguments.length===1)
+      return fn.require(propex);
+
     if(!exists(value) || (typeMismatch(propex, value)))
       return { errors: allow.errors.missing };
 
@@ -212,9 +215,9 @@ function typeMismatch(propex, data){
 }
 
 //middleware for express/restify
-validator.prototype.require = function(propex){
+validator.prototype.require = function require(propex){
   var self = this;
-  return function(req, res, next){
+  return function validation_middleware(req, res, next){
     var result = self(propex, req.body);
 
     if(result.errors) {
