@@ -97,8 +97,23 @@ You can use [allow](https://github.com/williamkapke/allow) as middleware with
 
 ```javascript
   app.post("/authenticate", validate.user('{email,password}'), function(req, res){
-    //lookup user credentials
-    return res.json({token:'9023JGIONW90023NNOIA'});
+    //if it reaches this point, the input passed validation
+    //`res` will now have a `model` property with the valid results of the validator.
+    //`res.body` will still contain the original input if you need it.
+    db.user.find({email:req.model.email}, function(err, user){
+      if(err) return res.send(500);
+      if(!user) return res.send(404);
+      if(!passwords_match(user.password, req.model.password))
+        return res.send(403);
+
+      return res.json({api_token:user.api_token});
+    })
+  });
+
+  //use the same validator, but allow/validate different properties
+  //adding `?` after each makes them optional!
+  app.post("/me", validate.user('{first?,last?,gender?,dob?,email?}'), function(req, res){
+    //update the user
   });
 ```
 
