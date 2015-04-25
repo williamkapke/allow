@@ -96,14 +96,15 @@ You can use [allow](https://github.com/williamkapke/allow) as middleware with
 [Express](https://github.com/strongloop/express)/[Restify](https://github.com/mcavage/node-restify).
 
 ```javascript
-  app.post("/authenticate", validate.user.require('{email,password}'), function(req, res){
+  app.post("/authenticate", validate.user('{email,password}'), function(req, res){
     //lookup user credentials
     return res.json({token:'9023JGIONW90023NNOIA'});
   });
 ```
 
-Each validator has a `require` method that returns a middleware compatible function. If there are any errors, it
+Passing only a Propex to the validator will return a middleware compatible function. If there are any errors, it
 responds with a `400` status code and the `errors` (as JSON) in the body.
+
 
 # Installation
 
