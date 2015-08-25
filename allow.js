@@ -9,63 +9,60 @@ function allow(definition) {
 
   return validator(definition);
 }
-allow.prototype = validator.prototype;
 
 function Actions(tester) {
-  this.test = tester;
+  return {
+    test: tester,
+    from: function (finder) {
+      this.find = finder;
+      return this;
+    },
+    then: function (setter) {
+      this.set = setter;
+      return this;
+    },
+    else: function (setter) {
+      this.missing = setter;
+      return this;
+    }
+  };
 }
-Actions.prototype.from = function (finder) {
-  this.find = finder;
-  return this;
-};
-Actions.prototype.then = function (setter) {
-  this.set = setter;
-  return this;
-};
-Actions.prototype.else = function (setter) {
-  this.missing = setter;
-  return this;
-};
-
-allow.string = function (regex, min, max) {
+allow.string = function (regex, min, max, msg) {
   if(typeof regex === 'number'){
+    msg = max;
     max = min;
     min = regex;
     regex = undefined;
   }
-  return new Actions(function (value) {
-    if(typeof value !== 'string') return allow.errors.invalid;
-    if (min && value.length < min)  return allow.errors.under;
-    if (max && value.length > max) return allow.errors.over;
-    if (regex && !regex.test(value)) return allow.errors.invalid;
+  var fmt = formatter(msg, min, max);
+  return Actions(function (value) {
+    if (typeof value === 'undefined') return fmt(allow.errors.missing);
+    if (typeof value !== 'string') return fmt(allow.errors.invalid, value);
+    if (min && value.length < min)  return fmt(allow.errors.under, value);
+    if (max && value.length > max) return fmt(allow.errors.over, value);
+    if (regex && !regex.test(value)) return fmt(allow.errors.invalid, value);
   });
 };
-allow.string.__proto__ = Actions.prototype;
-allow.string.test = allow.string().test;
 
-allow.number = function (min, max) {
-  return {
-    test: function (value) {
-      if(typeof value !== 'number') return allow.errors.invalid;
-      if (min && value < min)  return allow.errors.under;
-      if (max && value > max) return allow.errors.over;
-    }
-  };
+allow.number = function (min, max, msg) {
+  var fmt = formatter(msg, min, max);
+  return Actions(function (value) {
+    if (typeof value === 'undefined') return fmt(allow.errors.missing);
+    if(typeof value !== 'number') return fmt(allow.errors.invalid, value);
+    if (min && value < min)  return fmt(allow.errors.under, value);
+    if (max && value > max) return fmt(allow.errors.over, value);
+  });
 };
-allow.number.__proto__ = Actions.prototype;
-allow.number.test = allow.number().test;
 
-allow.integer = function (min, max) {
-  return {
-    test: function (value) {
-      if(typeof value !== 'number' || !test.isInt(value)) return allow.errors.invalid;
-      if (min && value < min)  return allow.errors.under;
-      if (max && value > max) return allow.errors.over;
-    }
-  };
+allow.integer = function (min, max, msg) {
+  var fmt = formatter(msg, min, max);
+  return Actions(function (value) {
+    if (typeof value === 'undefined') return fmt(allow.errors.missing);
+    if(typeof value !== 'number' || !test.isInt(value)) return fmt(allow.errors.invalid, value);
+    if (min && value < min)  return fmt(allow.errors.under, value);
+    if (max && value > max) return fmt(allow.errors.over, value);
+  });
 };
-allow.integer.__proto__ = Actions.prototype;
-allow.integer.test = allow.integer().test;
 
 //basic iso structure check. time portion (in GMT) optional.
 var isodate = /\d{4}-[01]\d-[0-3]\d(T[0-2]\d:[0-5]\d:[0-5]\d\.\d{3}Z)?$/;
@@ -75,54 +72,56 @@ function date(iso) {
     if(iso && !isodate.test(value)) return NaN;
     return new Date(value);
   }
-  return {
-    __proto__: Actions.prototype,
-    test: function (value) {
-      if(isNaN(parse(value))) return allow.errors.invalid;
-    },
-    after: function (date) {
-      date = date==='now'? new Date : new Date(date);
-      return {
-        test: function (value) {
-          value = parse(value);
-          if(isNaN(value)) return allow.errors.invalid;
-          if (date && value < date)  return allow.errors.under;
-        }
-      };
-    },
-    before: function (date) {
-      date = date==='now'? new Date : new Date(date);
-      return {
-        test: function (value) {
-          value = parse(value);
-          if(isNaN(value)) return allow.errors.invalid;
-          if (date && value > date) return allow.errors.over;
-        }
-      };
-    },
-    between: function (min, max) {
-      min = min==='now'? new Date : new Date(min);
-      max = max==='now'? new Date : new Date(max);
-      return {
-        test: function (value) {
-          value = parse(value);
-          if(isNaN(value)) return allow.errors.invalid;
-          if (min && value < min)  return allow.errors.under;
-          if (max && value > max) return allow.errors.over;
-        }
-      };
-    }
-  }
+  var actions = function (msg) {
+    var fmt = formatter(msg);
+    return Actions(function (value) {
+      if (typeof value === 'undefined') return fmt(allow.errors.missing);
+      if(isNaN(parse(value))) return fmt(allow.errors.invalid, value);
+    })
+  };
+  actions.after = function (date, msg) {
+    date = date==='now'? new Date : new Date(date);
+    var fmt = formatter(msg, date);
+    return Actions(function (value) {
+      if (typeof value === 'undefined') return fmt(allow.errors.missing);
+      value = parse(value);
+      if(isNaN(value)) return fmt(allow.errors.invalid, value);
+      if (date && value < date)  return fmt(allow.errors.under, value);
+    });
+  };
+  actions.before = function (date, msg) {
+    date = date==='now'? new Date : new Date(date);
+    var fmt = formatter(msg, date);
+    return Actions(function (value) {
+      if (typeof value === 'undefined') return fmt(allow.errors.missing);
+      value = parse(value);
+      if(isNaN(value)) return fmt(allow.errors.invalid, value);
+      if (date && value > date) return fmt(allow.errors.over, value);
+    });
+  };
+  actions.between = function (min, max, msg) {
+    min = min==='now'? new Date : new Date(min);
+    max = max==='now'? new Date : new Date(max);
+    var fmt = formatter(msg, min, max);
+    return Actions(function (value) {
+      if (typeof value === 'undefined') return fmt(allow.errors.missing);
+      value = parse(value);
+      if(isNaN(value)) return fmt(allow.errors.invalid, value);
+      if (min && value < min)  return fmt(allow.errors.under, value);
+      if (max && value > max) return fmt(allow.errors.over, value);
+    });
+  };
+  return actions;
 }
-allow.date = date();
+allow.date = date(false);
 allow.isodate = date(true);
 
-allow.email = {
-  __proto__: Actions.prototype,
-  test: function (value) {
-    if(typeof value !== 'string') return allow.errors.invalid;
-    if(!test.isEmail(value)) return allow.errors.invalid;
-  }
+allow.email = function (msg) {
+  var fmt = formatter(msg);
+  return Actions(function (value) {
+    if (typeof value === 'undefined') return fmt(allow.errors.missing);
+    if (typeof value !== 'string'|| !test.isEmail(value)) return fmt(allow.errors.invalid, value);
+  })
 };
 
 allow.errors = {
@@ -131,8 +130,12 @@ allow.errors = {
   over: 'over',
   invalid: 'invalid'
 };
+allow.format = function (msg, args) {
+  return msg.replace(/{(\d+)}/g, function(match,i) { return args[i]; });
+};
 
 function validator(config) {
+  var fmt = formatter();
 
   function fn(propex, value) {
     if (!propex)
@@ -144,7 +147,7 @@ function validator(config) {
       return fn.require(propex);
 
     if(!exists(value) || (typeMismatch(propex, value)))
-      return { errors: allow.errors.missing };
+      return { errors: fmt(allow.errors.missing, value) };
 
     function recurser(property, key) {
       if(typeof key === 'number' && (key > this.max))
@@ -157,7 +160,7 @@ function validator(config) {
       if(!exists(item)){
         if(!property.isOptional || (subs && typeMismatch(subs,item))) {
           if(typeof key !== 'number' || key < this.min)
-            this.errors[key] = (actions && actions.missing && actions.missing()) || allow.errors.missing;
+            this.errors[key] = (actions && actions.missing && actions.missing()) || fmt(allow.errors.missing, value);
         }
         return;
       }
@@ -190,7 +193,9 @@ function validator(config) {
   }
 
   fn.constructor = validator;
-  fn.__proto__ = validator.prototype;
+  Object.keys(allow).forEach(function (key) {
+    fn[key] = allow[key];
+  });
   fn.validators = config;
 
   return fn;
@@ -213,9 +218,19 @@ function typeMismatch(propex, data){
   var dataIsArray = Array.isArray(data);
   return (propex.isArray && !dataIsArray) || (!propex.isArray && dataIsArray)
 }
+function noFormat(msg) { return msg; }
+function formatter(msg) {
+  var format = typeof msg==='function'? msg : typeof allow.format === 'function'? allow.format : noFormat;
+  msg = typeof msg==='string'? msg : undefined;
+  var args = Array.prototype.slice.apply(arguments);
+  return function (type, value) {
+    args[0] = value;
+    return format(msg||type, args);
+  };
+}
 
 //middleware for express/restify
-validator.prototype.require = function require(propex){
+allow.require = function require(propex){
   var self = this;
   return function validation_middleware(req, res, next){
     var result = self(propex, req.body);
