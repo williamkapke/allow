@@ -1,7 +1,7 @@
 
 var should = require('should');
 var allow = require('../');
-
+allow.isEmail = require('validator').isEmail;
 
 describe('Action Helpers', function () {
 

@@ -1,6 +1,5 @@
 
 var Px = require("propex");
-var test = require('validator');
 
 module.exports = allow;
 function allow(definition) {
@@ -58,7 +57,7 @@ allow.integer = function (min, max, msg) {
   var fmt = formatter(msg, min, max);
   return Actions(function (value) {
     if (typeof value === 'undefined') return fmt(allow.errors.missing);
-    if(typeof value !== 'number' || !test.isInt(value)) return fmt(allow.errors.invalid, value);
+    if(typeof value !== 'number' || !/^[-+]?\d+$/.test(value)) return fmt(allow.errors.invalid, value);
     if (min && value < min)  return fmt(allow.errors.under, value);
     if (max && value > max) return fmt(allow.errors.over, value);
   });
@@ -120,7 +119,7 @@ allow.email = function (msg) {
   var fmt = formatter(msg);
   return Actions(function (value) {
     if (typeof value === 'undefined') return fmt(allow.errors.missing);
-    if (typeof value !== 'string'|| !test.isEmail(value)) return fmt(allow.errors.invalid, value);
+    if (typeof value !== 'string'|| !allow.isEmail(value)) return fmt(allow.errors.invalid, value);
   })
 };
 
@@ -245,4 +244,7 @@ allow.require = function require(propex){
   };
 };
 
+allow.isEmail = function () {
+  throw new Error('override this function with an email tester e.g.: https://www.npmjs.com/package/validator');
+};
 
