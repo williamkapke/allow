@@ -102,6 +102,18 @@ describe('Action Helpers', function () {
     });
   });
 
+  describe('Booleans', function () {
+    it('should validate booleans', function () {
+      should.not.exist(allow.boolean().test(true));
+      should.not.exist(allow.boolean().test(false));
+      allow.boolean().test('xxx').should.equal('invalid');
+    });
+
+    it('should have a from & then chain functions', function () {
+      should.exist(allow.boolean().from);
+      should.exist(allow.boolean().then);
+    });
+  });
 });
 
 describe("Error Messages", function () {

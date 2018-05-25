@@ -26,6 +26,14 @@ function Actions(tester) {
     }
   };
 }
+
+allow.boolean = function (msg) {
+  var fmt = formatter();
+  return Actions(function (value) {
+    if (typeof value === 'undefined') return fmt(allow.errors.missing);
+    if (typeof value !== 'boolean') return fmt(allow.errors.invalid, value);
+  });
+};
 allow.string = function (regex, min, max, msg) {
   if(typeof regex === 'number'){
     msg = max;
