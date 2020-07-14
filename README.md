@@ -98,8 +98,8 @@ You can use [allow](https://github.com/williamkapke/allow) as middleware with
 ```javascript
   app.post("/authenticate", validate.user('{email,password}'), function(req, res){
     //if it reaches this point, the input passed validation
-    //`res` will now have a `model` property with the valid results of the validator.
-    //`res.body` will still contain the original input if you need it.
+    //`req` will now have a `model` property with the valid results of the validator.
+    //`req.body` will still contain the original input if you need it.
     db.user.find({email:req.model.email}, function(err, user){
       if(err) return res.send(500);
       if(!user) return res.send(404);
